@@ -1,6 +1,6 @@
-## Comparative Analysis of CNN and Transformer-Based Models for 2D Medical Image Segmentation (ISIC 2020 Lesions)
+## Comparative Analysis of CNN and Transformer-Based Models for 2D Medical Image Segmentation (ISIC 2018 Lesions)
 
-Dataset: https://www.kaggle.com/competitions/siim-isic-melanoma-classification
+Dataset: https://challenge.isic-archive.com/data/#2018
 
 ### SOFTWARE (python packages are detailed separtely in `requirements.txt`)
 
