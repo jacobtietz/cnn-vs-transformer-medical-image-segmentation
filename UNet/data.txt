@@ -1,0 +1,11 @@
+## https://challenge.isic-archive.com/data/#2018
+
+Unet
+  data
+    train_images   - # training data
+    train_masks    - # training ground truth
+    val_images     - # validation data
+    val_masks      - # validation ground truth
+  main.py
+  unet.py
+  utils.py
