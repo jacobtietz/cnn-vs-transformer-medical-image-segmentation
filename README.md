@@ -10,8 +10,13 @@ CUDA Version 12.9
 
 nvidia Driver Version: 576.83
 
+### HARDWARE
 
-temp
+NVIDIA RTX 4090 (24gb)
+
+64gb RAM
+
+Intel(R) Core(TM) i9-14900KF
 
 
 
