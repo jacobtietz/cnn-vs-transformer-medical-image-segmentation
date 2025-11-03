@@ -1,11 +1,23 @@
 ## https://challenge.isic-archive.com/data/#2018
+Rename folders with data within them. Place in data folder.
 
 Unet
   data
+    test_images    - # testing data
+    test_masks     - # testing ground ground truth
     train_images   - # training data
     train_masks    - # training ground truth
     val_images     - # validation data
     val_masks      - # validation ground truth
   main.py
+  test.py
   unet.py
   utils.py
+
+python main.py #training+validation
+# Creates new_data for training data, giving clear segmentation images.
+# Creates basic plots for the different outcome parameters.
+
+python test.py #testing
+# Creates new_data for testing data, giving clear segmentation images.
+# Creates basic plot for the different outcome parameters.
