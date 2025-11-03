@@ -21,7 +21,7 @@ def main():
     # Hyperparameters
     image_size = (256, 256)
     batch_size = 32
-    epochs = 1
+    epochs = 3
     learning_rate = 1e-3
 
     # Dataset and DataLoader
