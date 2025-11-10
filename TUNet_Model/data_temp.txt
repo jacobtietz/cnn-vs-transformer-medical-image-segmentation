@@ -1,0 +1,5 @@
+python train.py --dataset CustomDataset --vit_name R50+ViT-B_16
+
+python test.py --dataset CustomDataset --vit_name R50+ViT-B_16 --is_savenii
+
+# Currently set to a single epoch for training due to long training time for ViT models.
