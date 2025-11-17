@@ -4,7 +4,10 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from unet import UNet
-from utils import SegmentationDataset, dice_coefficient, mean_iou, plot_metrics, predict_and_overlay
+from utils import SegmentationDataset, dice_coefficient, mean_iou
+import json
+from tqdm import tqdm
+
 
 def main():
     # Check device
@@ -18,13 +21,13 @@ def main():
     val_images_dir = os.path.join(data_folder, 'val_images')
     val_masks_dir = os.path.join(data_folder, 'val_masks')
 
-    # Hyperparameters
+    # Hyperparameters (super quick)
     image_size = (256, 256)
     batch_size = 32
     epochs = 3
     learning_rate = 1e-3
 
-    # Dataset and DataLoader
+    # Dataset + loaders
     train_dataset = SegmentationDataset(train_images_dir, train_masks_dir, image_size=image_size)
     val_dataset = SegmentationDataset(val_images_dir, val_masks_dir, image_size=image_size)
 
@@ -47,12 +50,15 @@ def main():
     }
 
     for epoch in range(epochs):
+        # TRAINING
         model.train()
         train_loss = 0
         train_dice = 0
         train_iou = 0
 
-        for imgs, masks in train_loader:
+        train_pbar = tqdm(train_loader, desc=f"Epoch {epoch+1} Training", ncols=100)
+
+        for imgs, masks in train_pbar:
             imgs, masks = imgs.to(device), masks.to(device)
             optimizer.zero_grad()
 
@@ -65,17 +71,22 @@ def main():
             train_dice += dice_coefficient(masks, outputs).item() * imgs.size(0)
             train_iou += mean_iou(masks, outputs).item() * imgs.size(0)
 
+            train_pbar.set_postfix({"loss": loss.item()})
+
         train_loss /= len(train_loader.dataset)
         train_dice /= len(train_loader.dataset)
         train_iou /= len(train_loader.dataset)
 
-        # Validation
+        # VALIDATION
         model.eval()
         val_loss = 0
         val_dice = 0
         val_iou = 0
+
+        val_pbar = tqdm(val_loader, desc=f"Epoch {epoch+1} Validation", ncols=100)
+
         with torch.no_grad():
-            for imgs, masks in val_loader:
+            for imgs, masks in val_pbar:
                 imgs, masks = imgs.to(device), masks.to(device)
                 outputs = model(imgs)
                 loss = criterion(outputs, masks)
@@ -84,14 +95,17 @@ def main():
                 val_dice += dice_coefficient(masks, outputs).item() * imgs.size(0)
                 val_iou += mean_iou(masks, outputs).item() * imgs.size(0)
 
+                val_pbar.set_postfix({"val_loss": loss.item()})
+
         val_loss /= len(val_loader.dataset)
         val_dice /= len(val_loader.dataset)
         val_iou /= len(val_loader.dataset)
 
-        print(f"Epoch [{epoch+1}/{epochs}] "
+        print(f"\nEpoch [{epoch+1}/{epochs}] "
               f"Train Loss: {train_loss:.4f}, Dice: {train_dice:.4f}, IoU: {train_iou:.4f} | "
-              f"Val Loss: {val_loss:.4f}, Dice: {val_dice:.4f}, IoU: {val_iou:.4f}")
+              f"Val Loss: {val_loss:.4f}, Dice: {val_dice:.4f}, IoU: {val_iou:.4f}\n")
 
+        # Save metrics
         history['loss'].append(train_loss)
         history['dice'].append(train_dice)
         history['iou'].append(train_iou)
@@ -99,16 +113,17 @@ def main():
         history['val_dice'].append(val_dice)
         history['val_iou'].append(val_iou)
 
-    # Save model and weights
+    # Save metrics
+    os.makedirs("metrics", exist_ok=True)
+    with open("metrics/training_metrics.txt", "w") as f:
+        json.dump(history, f, indent=4)
+
+    # Save model
     os.makedirs("models", exist_ok=True)
     torch.save(model.state_dict(), "models/unet_weights.pth")
-    torch.save(model, "models/unet_model.pth")  # Entire model (optional)
+    torch.save(model, "models/unet_model.pth")
 
-    # Plot metrics
-    plot_metrics(history)
-
-    # Predict and save overlayed images
-    predict_and_overlay(model, device, "data/train_images", "new_data/train", image_size=image_size)
+    print("Training complete.")
 
 
 if __name__ == "__main__":

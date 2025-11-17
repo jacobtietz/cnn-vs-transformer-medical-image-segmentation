@@ -6,6 +6,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+from tqdm import tqdm   # <-- added
 
 # Dataset class for loading images and masks
 class SegmentationDataset(Dataset):
@@ -48,12 +49,13 @@ class SegmentationDataset(Dataset):
         return img, mask
 
 
-# Metrics: Dice coefficient and Mean IoU (PyTorch tensors)
+# Metrics: Dice coefficient and Mean IoU
 def dice_coefficient(y_true, y_pred, smooth=1e-6):
     y_true = y_true.view(-1)
     y_pred = y_pred.view(-1)
     intersection = (y_true * y_pred).sum()
     return (2. * intersection + smooth) / (y_true.sum() + y_pred.sum() + smooth)
+
 
 def mean_iou(y_true, y_pred, threshold=0.5):
     y_pred = (y_pred > threshold).float()
@@ -101,7 +103,7 @@ def plot_metrics(history, output_dir="plots"):
         plt.close()
 
 
-# Prediction and overlay saving
+# Prediction and overlay saving (with progress bar)
 def predict_and_overlay(model, device, image_dir, save_dir, image_size=(128, 128)):
     os.makedirs(save_dir, exist_ok=True)
     model.eval()
@@ -113,8 +115,10 @@ def predict_and_overlay(model, device, image_dir, save_dir, image_size=(128, 128
 
     image_files = sorted(os.listdir(image_dir))
 
+    print("Saving overlayed images...")
+
     with torch.no_grad():
-        for img_file in image_files:
+        for img_file in tqdm(image_files, desc="Overlay Progress"):
             img_path = os.path.join(image_dir, img_file)
             img = Image.open(img_path).convert("RGB")
             input_tensor = transform(img).unsqueeze(0).to(device)
@@ -123,14 +127,15 @@ def predict_and_overlay(model, device, image_dir, save_dir, image_size=(128, 128
             pred_mask = pred_mask.squeeze(0).squeeze(0).cpu()
             binary_mask = (pred_mask > 0.5).float()
 
-            # Convert input and mask to numpy for overlay
+            # Convert input and mask to numpy
             img_np = np.array(img.resize(image_size)) / 255.0
             mask_np = binary_mask.numpy()
 
-            # Overlay mask on image (only keep areas where mask==1)
+            # Create overlay
             overlay = img_np * np.expand_dims(mask_np, axis=2)
             overlay_img = Image.fromarray((overlay * 255).astype(np.uint8))
 
             save_path = os.path.join(save_dir, img_file)
             overlay_img.save(save_path)
-            print(f"Saved overlayed image: {save_path}")
+
+    print("All overlayed images saved!")

@@ -13,6 +13,7 @@ def random_rot_flip(image, label):
     k = np.random.randint(0, 4)
     image = np.rot90(image, k)
     label = np.rot90(label, k)
+
     axis = np.random.randint(0, 2)
     image = np.flip(image, axis=axis).copy()
     label = np.flip(label, axis=axis).copy()
@@ -42,10 +43,22 @@ class RandomGenerator(object):
         x, y = image.shape[:2]
         if x != self.output_size[0] or y != self.output_size[1]:
             if image.ndim == 2:
-                image = zoom(image, (self.output_size[0] / x, self.output_size[1] / y), order=3)
+                image = zoom(
+                    image,
+                    (self.output_size[0] / x, self.output_size[1] / y),
+                    order=3
+                )
             else:
-                image = zoom(image, (self.output_size[0] / x, self.output_size[1] / y, 1), order=3)
-            label = zoom(label, (self.output_size[0] / x, self.output_size[1] / y), order=0)
+                image = zoom(
+                    image,
+                    (self.output_size[0] / x, self.output_size[1] / y, 1),
+                    order=3
+                )
+            label = zoom(
+                label,
+                (self.output_size[0] / x, self.output_size[1] / y),
+                order=0
+            )
 
         # To tensor
         if image.ndim == 2:
@@ -65,13 +78,13 @@ class CustomDataset(Dataset):
         """
         Automatically load images and masks from folders.
         Expected folder structure:
-        base_dir/
-            train_images/
-            train_masks/
-            val_images/
-            val_masks/
-            test_images/
-            test_masks/
+            base_dir/
+                train_images/
+                train_masks/
+                val_images/
+                val_masks/
+                test_images/
+                test_masks/
         """
         self.transform = transform
         self.split = split
@@ -89,7 +102,8 @@ class CustomDataset(Dataset):
         self.image_list = sorted(glob.glob(os.path.join(image_dir, "*")))
         self.mask_list = sorted(glob.glob(os.path.join(mask_dir, "*")))
 
-        assert len(self.image_list) == len(self.mask_list), "Images and masks count must match!"
+        assert len(self.image_list) == len(self.mask_list), \
+            "Images and masks count must match!"
 
     def __len__(self):
         return len(self.image_list)
@@ -100,14 +114,15 @@ class CustomDataset(Dataset):
 
         # Load image
         image = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # single channel for medical images
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # single channel
 
         # Load mask
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
         mask = mask.astype(np.int64)
-        mask[mask > 0] = 1  # convert any non-zero to class 1
+        mask[mask > 0] = 1
 
         sample = {'image': image, 'label': mask}
+
         if self.transform:
             sample = self.transform(sample)
 
