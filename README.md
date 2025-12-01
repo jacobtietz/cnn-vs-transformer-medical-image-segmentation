@@ -50,12 +50,12 @@ mv {MODEL_NAME}.npz ../model/vit_checkpoint/imagenet21k/{MODEL_NAME}.npz
 
 ---
 
-## UNet Framework
+## UNet
 
 <img width="1063" height="519" alt="UNet Architecture" src="https://github.com/user-attachments/assets/3d622cca-6ef9-4e79-a2c6-c4c22c7386af" />
 
 ---
 
-## TransUNet Framework
+## [TransUNet](https://github.com/Beckschen/TransUNet?tab=readme-ov-file)](https://github.com/Beckschen/TransUNet?tab=readme-ov-file)
 
 <img width="1063" height="519" alt="TransUNet Architecture" src="https://github.com/user-attachments/assets/d19f9a84-c774-4390-8b71-c83ca12b3815" />
