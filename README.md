@@ -9,7 +9,7 @@ This repository contains implementations and experiments comparing **UNet** and 
 The dataset can be downloaded from the official ISIC archive:  
 [ISIC 2018 Dataset](https://challenge.isic-archive.com/data/#2018)  
 
-Place the downloaded dataset in the `data` folder of this repository.
+Place the downloaded dataset in the `data` folder of both repositories.
 
 ---
 
