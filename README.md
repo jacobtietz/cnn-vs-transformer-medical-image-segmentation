@@ -9,7 +9,7 @@ This repository contains implementations and experiments comparing **UNet** and 
 The dataset can be downloaded from the official ISIC archive:  
 [ISIC 2018 Dataset](https://challenge.isic-archive.com/data/#2018)  
 
-Place the downloaded dataset in the `data` folder of both repositories.
+Place the downloaded dataset in the `data` folder of this repository.
 
 ---
 
@@ -30,6 +30,23 @@ The models were trained on the following hardware:
 - **GPU:** NVIDIA RTX 4090 (24GB)  
 - **RAM:** 64GB  
 - **CPU:** Intel(R) Core(TM) i9-14900KF  
+
+---
+
+## Pre-trained Models
+
+For **TransUNet**, you need to download Google pre-trained Vision Transformer (ViT) models:
+
+1. Visit the storage link: [Google ViT Models](https://console.cloud.google.com/storage/browser/vit_models)  
+   Available models include: `R50-ViT-B_16`, `ViT-B_16`, `ViT-L_16`, etc.
+
+2. Download the model using `wget`, create the checkpoint folder, and move the file:
+
+```bash
+wget https://storage.googleapis.com/vit_models/imagenet21k/{MODEL_NAME}.npz
+mkdir -p ../model/vit_checkpoint/imagenet21k
+mv {MODEL_NAME}.npz ../model/vit_checkpoint/imagenet21k/{MODEL_NAME}.npz
+```
 
 ---
 
