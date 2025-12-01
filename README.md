@@ -1,27 +1,44 @@
-## Comparative Analysis of CNN and Transformer-Based Models for 2D Medical Image Segmentation (ISIC 2018 Lesions)
+# Comparative Analysis of CNN and Transformer-Based Models for 2D Medical Image Segmentation (ISIC 2018 Lesions)
 
-Dataset (data folder): https://challenge.isic-archive.com/data/#2018
+This repository contains implementations and experiments comparing **UNet** and **TransUNet** architectures for medical image segmentation on the ISIC 2018 skin lesion dataset.
 
-### SOFTWARE (python packages are detailed separtely in `requirements.txt`)
+---
 
-Python 3.13.7
+## Dataset
 
-CUDA Version 12.9
+The dataset can be downloaded from the official ISIC archive:  
+[ISIC 2018 Dataset](https://challenge.isic-archive.com/data/#2018)  
 
-nvidia Driver Version: 576.83
+Place the downloaded dataset in the `data` folder of this repository.
 
-### HARDWARE
+---
 
-NVIDIA RTX 4090 (24gb)
+## Software Requirements
 
-64gb RAM
+Python packages required for running the models are listed in [`requirements.txt`](requirements.txt).
 
-Intel(R) Core(TM) i9-14900KF
+- **Python:** 3.13.7  
+- **CUDA Version:** 12.9  
+- **NVIDIA Driver Version:** 576.83  
 
+---
 
+## Hardware
 
-### UNET FRAMEWORK
-<img width="1063" height="519" alt="u-net-architecture" src="https://github.com/user-attachments/assets/3d622cca-6ef9-4e79-a2c6-c4c22c7386af" />
+The models were trained on the following hardware:
 
-### TRANSUNET FRAMEWORK
-<img width="1063" height="519" alt="1_3DLVN1ITuE5BP6H1a_hyog" src="https://github.com/user-attachments/assets/d19f9a84-c774-4390-8b71-c83ca12b3815" />
+- **GPU:** NVIDIA RTX 4090 (24GB)  
+- **RAM:** 64GB  
+- **CPU:** Intel(R) Core(TM) i9-14900KF  
+
+---
+
+## UNet Framework
+
+<img width="1063" height="519" alt="UNet Architecture" src="https://github.com/user-attachments/assets/3d622cca-6ef9-4e79-a2c6-c4c22c7386af" />
+
+---
+
+## TransUNet Framework
+
+<img width="1063" height="519" alt="TransUNet Architecture" src="https://github.com/user-attachments/assets/d19f9a84-c774-4390-8b71-c83ca12b3815" />
