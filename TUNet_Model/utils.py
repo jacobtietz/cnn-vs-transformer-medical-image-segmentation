@@ -7,9 +7,6 @@ import SimpleITK as sitk
 import os
 from PIL import Image
 
-# --------------------------
-# Dice Loss
-# --------------------------
 class DiceLoss(nn.Module):
     def __init__(self, n_classes):
         super(DiceLoss, self).__init__()
@@ -30,17 +27,10 @@ class DiceLoss(nn.Module):
         if weight is None:
             weight = [1] * self.n_classes
         assert inputs.size() == target.size(), f'predict {inputs.size()} & target {target.size()} do not match'
-        loss = 0.0
-        for i in range(self.n_classes):
-            loss += self._dice_loss(inputs[:, i], target[:, i]) * weight[i]
+        loss = sum(self._dice_loss(inputs[:, i], target[:, i]) * weight[i] for i in range(self.n_classes))
         return loss / self.n_classes
 
-
-# --------------------------
-# IoU computation
-# --------------------------
 def compute_iou(preds, labels, num_classes):
-    """Compute mean IoU over a batch"""
     ious = []
     preds = preds.view(-1)
     labels = labels.view(-1)
@@ -49,33 +39,22 @@ def compute_iou(preds, labels, num_classes):
         target_inds = labels == cls
         intersection = (pred_inds & target_inds).sum().item()
         union = (pred_inds | target_inds).sum().item()
-        if union == 0:
-            ious.append(float('nan'))
-        else:
+        if union != 0:
             ious.append(intersection / union)
-    ious = [iou for iou in ious if not np.isnan(iou)]
-    return np.mean(ious) if len(ious) > 0 else 0.0
+    return np.mean(ious) if ious else 0.0
 
-
-# --------------------------
-# Metrics per case
-# --------------------------
 def calculate_metric_percase(pred, gt):
-    pred[pred>0] = 1
-    gt[gt>0] = 1
-    if pred.sum()>0 and gt.sum()>0:
+    pred[pred > 0] = 1
+    gt[gt > 0] = 1
+    if pred.sum() > 0 and gt.sum() > 0:
         dice = metric.binary.dc(pred, gt)
         hd95 = metric.binary.hd95(pred, gt)
         return dice, hd95
-    elif pred.sum()>0 and gt.sum()==0:
+    elif pred.sum() > 0 and gt.sum() == 0:
         return 1, 0
     else:
         return 0, 0
 
-
-# --------------------------
-# Overlay saving
-# --------------------------
 def save_overlay(image_slice, prediction_slice, save_dir, case_name, slice_idx=None):
     os.makedirs(save_dir, exist_ok=True)
     img = ((image_slice - image_slice.min()) / (image_slice.max() - image_slice.min()) * 255).astype(np.uint8)
@@ -91,41 +70,25 @@ def save_overlay(image_slice, prediction_slice, save_dir, case_name, slice_idx=N
     else:
         overlay_img.save(os.path.join(save_dir, f"{case_name}.png"))
 
-
-# --------------------------
-# Test single volume / slice
-# --------------------------
 def test_single_volume(image, label, net, classes, patch_size=[256,256],
                        test_save_path=None, case=None, z_spacing=1):
     """
     Handles 2D slices (H,W) or batched slices (C,H,W) from your CustomDataset.
     Returns list of (dice, hd95) for each class.
     """
-    # Ensure numpy array
-    image = image.cpu().detach().numpy()
-    label = label.squeeze(0).cpu().detach().numpy()  # (H,W) or (1,H,W)
-
-    # Squeeze extra dimensions if any
-    image = np.squeeze(image)
-
-    # Prepare prediction array
+    image = np.squeeze(image.cpu().detach().numpy())
+    label = label.squeeze(0).cpu().detach().numpy()
     prediction = np.zeros_like(label, dtype=np.uint8)
-
-    # Input tensor
-    input_tensor = torch.from_numpy(image).unsqueeze(0).unsqueeze(0).float().cuda()  # (1,1,H,W)
-
+    input_tensor = torch.from_numpy(image).unsqueeze(0).unsqueeze(0).float().cuda()
     net.eval()
     with torch.no_grad():
         out = torch.softmax(net(input_tensor), dim=1)
         out = torch.argmax(out, dim=1).squeeze(0).cpu().numpy()
         prediction = out.astype(np.uint8)
 
-    # Compute metrics
     metric_list = [calculate_metric_percase(prediction==i, label==i) for i in range(1, classes)]
 
-    # Save results if requested
     if test_save_path is not None and case is not None:
-        # Save NIfTI
         img_itk = sitk.GetImageFromArray(image.astype(np.float32))
         prd_itk = sitk.GetImageFromArray(prediction.astype(np.float32))
         lab_itk = sitk.GetImageFromArray(label.astype(np.float32))
@@ -135,8 +98,6 @@ def test_single_volume(image, label, net, classes, patch_size=[256,256],
         sitk.WriteImage(prd_itk, os.path.join(test_save_path, f"{case}_pred.nii.gz"))
         sitk.WriteImage(img_itk, os.path.join(test_save_path, f"{case}_img.nii.gz"))
         sitk.WriteImage(lab_itk, os.path.join(test_save_path, f"{case}_gt.nii.gz"))
-
-        # Save overlay PNG
         save_overlay(image, prediction, test_save_path, case)
 
     return metric_list

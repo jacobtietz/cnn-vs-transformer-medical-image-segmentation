@@ -1,5 +1,6 @@
 import ml_collections
 
+
 def get_b16_config():
     """Returns the ViT-B/16 configuration."""
     config = ml_collections.ConfigDict()
@@ -25,6 +26,7 @@ def get_b16_config():
     config.skip_channels = [0, 0, 0, 0]
     return config
 
+
 def get_testing():
     """Returns a minimal configuration for testing."""
     config = ml_collections.ConfigDict()
@@ -41,6 +43,7 @@ def get_testing():
     config.n_skip = 0
     config.skip_channels = [0, 0, 0, 0]
     return config
+
 
 def get_r50_b16_config():
     """Returns the Resnet50 + ViT-B/16 configuration."""
@@ -59,12 +62,14 @@ def get_r50_b16_config():
     config.activation = 'softmax'
     return config
 
+
 def get_b32_config():
     """Returns the ViT-B/32 configuration."""
     config = get_b16_config()
     config.patches.size = (32, 32)
     config.pretrained_path = './model/vit_checkpoint/imagenet21k/ViT-B_32.npz'
     return config
+
 
 def get_l16_config():
     """Returns the ViT-L/16 configuration."""
@@ -89,6 +94,7 @@ def get_l16_config():
     config.skip_channels = [0, 0, 0, 0]
     return config
 
+
 def get_r50_l16_config():
     """Returns the Resnet50 + ViT-L/16 configuration."""
     config = get_l16_config()
@@ -106,11 +112,13 @@ def get_r50_l16_config():
     config.activation = 'softmax'
     return config
 
+
 def get_l32_config():
     """Returns the ViT-L/32 configuration."""
     config = get_l16_config()
     config.patches.size = (32, 32)
     return config
+
 
 def get_h14_config():
     """Returns the ViT-H/14 configuration."""

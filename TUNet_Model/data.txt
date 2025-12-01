@@ -1,0 +1,25 @@
+# Training TransUNet / ViT-based segmentation on the CustomDataset
+
+# Command to train the model:
+python train.py --dataset CustomDataset --vit_name R50+ViT-B_16
+
+# Explanation:
+# - CustomDataset: your dataset of 2D medical images (e.g., ISIC lesions)
+# - vit_name: the backbone model; R50+ViT-B_16 uses a ResNet50 + Vision Transformer-B/16
+# - Training process: 
+#     1. Images are split into patches by the ViT backbone.
+#     2. ResNet extracts features if hybrid backbone is used.
+#     3. Transformer encoder processes patch embeddings to learn global context.
+#     4. Decoder reconstructs pixel-level segmentation maps, optionally using skip connections.
+# - Outputs saved: model checkpoints in 'model/' folder
+
+# Command to test / evaluate the trained model:
+python test.py --dataset CustomDataset --vit_name R50+ViT-B_16 --img_size 128 --is_savenii
+
+# Explanation:
+# - --is_savenii: saves segmentation predictions in NIfTI (.nii) format for visualization or evaluation
+# - Test process:
+#     1. Input images go through trained transformer + decoder.
+#     2. Outputs are segmentation maps (e.g., tumor / lesion masks).
+#     3. Dice coefficient and IoU metrics are computed automatically.
+# - Use this command to generate results for qualitative or quantitative analysis.

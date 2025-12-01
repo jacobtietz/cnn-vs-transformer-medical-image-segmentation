@@ -14,7 +14,6 @@ from utils import test_single_volume, compute_iou
 from networks.vit_seg_modeling import VisionTransformer as ViT_seg
 from networks.vit_seg_modeling import CONFIGS as CONFIGS_ViT_seg
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='CustomDataset')
 parser.add_argument('--vit_name', type=str, default='R50+ViT-B_16')
@@ -29,7 +28,6 @@ parser.add_argument('--deterministic', type=int, default=1)
 parser.add_argument('--seed', type=int, default=1234)
 args = parser.parse_args()
 
-
 def inference(args, model, test_save_path=None):
     transform = RandomGenerator(output_size=(args.img_size, args.img_size))
     db_test = args.Dataset(base_dir=args.volume_path, split='val', transform=transform)
@@ -38,13 +36,12 @@ def inference(args, model, test_save_path=None):
     logging.info(f"{len(testloader)} test iterations")
     model.eval()
 
-    all_metrics = []  # Store per-case metrics
-    all_ious = []     # Store IoU per case
+    all_metrics = []
+    all_ious = []
 
     for i_batch, sampled_batch in enumerate(tqdm(testloader, desc='Testing')):
         image, label, case_name = sampled_batch["image"], sampled_batch["label"], sampled_batch['case_name'][0]
 
-        # Run test_single_volume
         metric_i = test_single_volume(
             image, label, model, classes=args.num_classes,
             patch_size=[args.img_size, args.img_size],
@@ -52,22 +49,18 @@ def inference(args, model, test_save_path=None):
         )
         all_metrics.append(metric_i)
 
-        # Compute IoU
         with torch.no_grad():
-            # Ensure image has batch dimension
-            if image.ndim == 3:  # (C,H,W)
-                image_tensor = image.unsqueeze(0).float().cuda()
-            else:  # already (1,C,H,W)
-                image_tensor = image.float().cuda()
+            image_tensor = image.unsqueeze(0).float().cuda() if image.ndim == 3 else image.float().cuda()
             label_tensor = label.cuda()
-
             outputs = model(image_tensor)
             preds = torch.argmax(torch.softmax(outputs, dim=1), dim=1)
             iou = compute_iou(preds, label_tensor, args.num_classes)
             all_ious.append(iou)
 
-        logging.info(f'Case {case_name} mean_dice {np.mean(metric_i, axis=0)[0]:.4f} '
-                     f'mean_hd95 {np.mean(metric_i, axis=0)[1]:.4f} IoU {iou:.4f}')
+        logging.info(
+            f'Case {case_name} mean_dice {np.mean(metric_i, axis=0)[0]:.4f} '
+            f'mean_hd95 {np.mean(metric_i, axis=0)[1]:.4f} IoU {iou:.4f}'
+        )
 
     all_metrics = np.array(all_metrics)
     for cls in range(1, args.num_classes):
@@ -81,14 +74,9 @@ def inference(args, model, test_save_path=None):
     logging.info(f'Testing performance: mean_dice {mean_dice:.4f} mean_hd95 {mean_hd95:.4f} mean_iou {mean_iou:.4f}')
     return "Testing Finished!"
 
-
 if __name__ == "__main__":
-    if not args.deterministic:
-        cudnn.benchmark = True
-        cudnn.deterministic = False
-    else:
-        cudnn.benchmark = False
-        cudnn.deterministic = True
+    cudnn.benchmark = not args.deterministic
+    cudnn.deterministic = bool(args.deterministic)
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -102,8 +90,10 @@ if __name__ == "__main__":
     args.volume_path = dataset_config[args.dataset]['volume_path']
     args.num_classes = dataset_config[args.dataset]['num_classes']
 
-    snapshot_path = f"./model/TU_{args.dataset}{args.img_size}/TU_pretrain_{args.vit_name}_skip{args.n_skip}_10k_epo1_bs8_{args.img_size}"
-    checkpoint_file = os.path.join(snapshot_path, 'epoch_0.pth')
+    snapshot_path = f"./model/TU_{args.dataset}{args.img_size}/TU_pretrain_{args.vit_name}_skip{args.n_skip}_10k_epo50_bs8_{args.img_size}"
+    print("Resolved snapshot_path:", os.path.abspath(snapshot_path))
+
+    checkpoint_file = os.path.join(snapshot_path, 'epoch_49.pth')
     if not os.path.exists(checkpoint_file):
         raise FileNotFoundError(f"No checkpoint found in {snapshot_path}")
 
@@ -111,13 +101,14 @@ if __name__ == "__main__":
     config_vit.n_classes = args.num_classes
     config_vit.n_skip = args.n_skip
     config_vit.patches.size = (args.vit_patches_size, args.vit_patches_size)
-    if args.vit_name.find('R50') != -1:
-        config_vit.patches.grid = (int(args.img_size / args.vit_patches_size),
-                                   int(args.img_size / args.vit_patches_size))
+    if 'R50' in args.vit_name:
+        config_vit.patches.grid = (args.img_size // args.vit_patches_size,
+                                   args.img_size // args.vit_patches_size)
+
     net = ViT_seg(config_vit, img_size=args.img_size, num_classes=config_vit.n_classes).cuda()
     net.load_state_dict(torch.load(checkpoint_file))
 
-    log_folder = './test_log/test_log_' + f"{args.dataset}{args.img_size}"
+    log_folder = f'./test_log/test_log_{args.dataset}{args.img_size}'
     os.makedirs(log_folder, exist_ok=True)
     logging.basicConfig(filename=os.path.join(log_folder, "log.txt"),
                         level=logging.INFO,
@@ -125,10 +116,8 @@ if __name__ == "__main__":
                         datefmt='%H:%M:%S')
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
-    if args.is_savenii:
-        test_save_path = args.test_save_dir
+    test_save_path = args.test_save_dir if args.is_savenii else None
+    if test_save_path:
         os.makedirs(test_save_path, exist_ok=True)
-    else:
-        test_save_path = None
 
     inference(args, net, test_save_path)

@@ -15,7 +15,7 @@ UNet
   unet.py
   utils.py
 
-python main.py 
+python UNet/main.py 
 # training+validation.
 # Saves training/val metrics in metrics folder.
 
